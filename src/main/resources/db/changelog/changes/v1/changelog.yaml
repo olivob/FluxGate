@@ -28,3 +28,23 @@ databaseChangeLog:
       - sqlFile:
         path: ddl/create_table_api_keys.sql
         relativeToChangelogFile: true
+
+  - changeSet:
+    id: create_table_account_policies
+    author: Bryan Olivo
+    failOnError: true
+    runInTransaction: true
+    changes:
+      - sqlFile:
+        path: ddl/create_table_account_policies.sql
+        relativeToChangelogFile: true
+
+  - changeSet:
+    id: create_table_usage_ledger_daily
+    author: Bryan Olivo
+    failOnError: true
+    runInTransaction: true
+    changes:
+      - sqlFile:
+        path: ddl/create_table_usage_ledger_daily.sql
+        relativeToChangelogFile: true
