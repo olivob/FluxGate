@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/llmway}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/fluxgate}
     username: ${DB_USER:postgres}
     password: ${DB_PASSWORD:postgres}
   liquibase:
