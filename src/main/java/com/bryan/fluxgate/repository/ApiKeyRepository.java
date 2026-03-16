@@ -1,12 +1,15 @@
 package com.bryan.fluxgate.repository;
 
-import org.springframework.stereotype.Repository;
-import org.springframework.web.bind.annotation.RequestParam;
+import java.util.Optional;
+import java.util.UUID;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.bryan.fluxgate.entity.ApiKey;
+import com.bryan.fluxgate.model.enums.ApiKeyStatus;
 
 @Repository
-@RequiredArgsConstructor
-public class ApiKeyRepository {
-
+public interface ApiKeyRepository extends JpaRepository<ApiKey, UUID> {
+    Optional<ApiKey> findByKeyHashAndStatus(String keyHash, ApiKeyStatus status);
 }
