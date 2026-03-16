@@ -3,8 +3,12 @@ package com.bryan.fluxgate.entity;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import com.bryan.fluxgate.model.enums.ApiKeyStatus;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -34,7 +38,9 @@ public class ApiKey {
 
     private String name;
 
-    private String status;
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private ApiKeyStatus status;
 
     @Column(name = "created_at")
     private OffsetDateTime createdAt;

@@ -23,6 +23,7 @@ public class ApiKeyController {
 
     @GetMapping("/verifyKey")
     public ResponseEntity<ApiKeyVerificationResponse> getAccount(@RequestHeader("X-API-Key") String apiKey) {
+        log.info("Verifying API key");
         ApiKeyVerificationResponse response = apiAuthKeyService.verifyApiKey(apiKey);
 
         return ResponseEntity.ok().body(response);
