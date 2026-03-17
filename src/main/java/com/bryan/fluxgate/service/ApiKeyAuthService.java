@@ -2,13 +2,10 @@ package com.bryan.fluxgate.service;
 
 import java.time.OffsetDateTime;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
-import com.bryan.fluxgate.entity.Account;
 import com.bryan.fluxgate.entity.ApiKey;
-import com.bryan.fluxgate.model.dto.AccountDTO;
 import com.bryan.fluxgate.model.enums.AccountStatus;
 import com.bryan.fluxgate.model.enums.ApiKeyStatus;
 import com.bryan.fluxgate.model.principal.ApiKeyPrincipal;
@@ -24,8 +21,13 @@ public class ApiKeyAuthService {
 
     private final ApiKeyRepository apiKeyRepository;
 
-    public ApiKeyPrincipal verifyApiKey(String apiKey) {
-        String hashedKey = DigestUtils.sha256Hex(apiKey);
+    private final ApiKeyHashingService apiKeyHashingService;
+
+    public ApiKeyPrincipal verifyApiKey(String rawApiKey) {
+        if (rawApiKey == null || rawApiKey.isBlank()) {
+            throw new BadCredentialsException("API key must not be null or empty");
+        }
+        String hashedKey = apiKeyHashingService.hash(rawApiKey);
 
         ApiKey apiKeyResponse = apiKeyRepository
                 .findByKeyHashAndStatusWithAccount(hashedKey, ApiKeyStatus.ACTIVE)
@@ -38,28 +40,24 @@ public class ApiKeyAuthService {
 
     private void validateApiKey(ApiKey apiKey) {
         if (apiKey.getExpiresAt() != null && apiKey.getExpiresAt().isBefore(OffsetDateTime.now())) {
-            throw new BadCredentialsException("Api key has expired!");
+            throw new BadCredentialsException("API key has expired");
         }
 
         if (apiKey.getRevokedAt() != null) {
-            throw new BadCredentialsException("Api key has been revoked!");
-        }
-
-        if (apiKey.getAccount() == null) {
-            throw new BadCredentialsException("Account not found");
+            throw new BadCredentialsException("API key has been revoked");
         }
 
         if (apiKey.getAccount().getStatus() != AccountStatus.ACTIVE) {
-            throw new BadCredentialsException("Account inactive");
+            throw new BadCredentialsException("Account is not active");
         }
     }
 
-    private AccountDTO mapAccountToDTO(Account account) {
-        return AccountDTO.builder()
-                .id(account.getId())
-                .name(account.getName())
-                .status(account.getStatus())
-                .createdAt(account.getCreatedAt())
-                .build();
-    }
+    // private AccountDTO mapAccountToDTO(Account account) {
+    // return AccountDTO.builder()
+    // .id(account.getId())
+    // .name(account.getName())
+    // .status(account.getStatus())
+    // .createdAt(account.getCreatedAt())
+    // .build();
+    // }
 }
