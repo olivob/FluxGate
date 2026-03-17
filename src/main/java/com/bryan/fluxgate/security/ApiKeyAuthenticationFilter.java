@@ -27,10 +27,7 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        log.info("ApiKeyAuthenticationFilter invoked for path={}", request.getServletPath());
         String rawApiKey = request.getHeader(API_KEY_HEADER);
-
-        log.info("Using this header: {}", rawApiKey);
 
         if (StringUtils.isBlank(rawApiKey)) {
             filterChain.doFilter(request, response);
@@ -42,10 +39,7 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
             Authentication authRequest = new ApiKeyAuthenticationToken(rawApiKey);
             Authentication authResponse = authenticationManager.authenticate(authRequest);
 
-            log.info("Authentication successful, principal: {}", authResponse.getPrincipal());
-
             SecurityContextHolder.getContext().setAuthentication(authResponse);
-            log.info("SecurityContext authentication set={}", SecurityContextHolder.getContext().getAuthentication());
         } catch (BadCredentialsException e) {
             SecurityContextHolder.clearContext();
             log.warn("API key authentication failed: {}", e.getMessage());
