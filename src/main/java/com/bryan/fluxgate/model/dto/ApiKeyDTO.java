@@ -3,6 +3,8 @@ package com.bryan.fluxgate.model.dto;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import com.bryan.fluxgate.model.enums.ApiKeyStatus;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -16,7 +18,7 @@ public class ApiKeyDTO {
 
     private String keyPrefix;
 
-    private String status;
+    private ApiKeyStatus status;
 
     private OffsetDateTime createdAt;
 

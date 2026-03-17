@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bryan.fluxgate.model.principal.ApiKeyPrincipal;
 import com.bryan.fluxgate.model.response.ApiKeyVerificationResponse;
 import com.bryan.fluxgate.service.ApiKeyAuthService;
 
@@ -24,7 +25,10 @@ public class ApiKeyController {
     @GetMapping("/verifyKey")
     public ResponseEntity<ApiKeyVerificationResponse> getAccount(@RequestHeader("X-API-Key") String apiKey) {
         log.info("Verifying API key");
-        ApiKeyVerificationResponse response = apiAuthKeyService.verifyApiKey(apiKey);
+        ApiKeyPrincipal apiKeyPrincipal = apiAuthKeyService.verifyApiKey(apiKey);
+
+        ApiKeyVerificationResponse response = ApiKeyVerificationResponse.builder()
+                .accountId(apiKeyPrincipal.accountId()).apiKeyId(apiKeyPrincipal.apiKeyId()).build();
 
         return ResponseEntity.ok().body(response);
     }

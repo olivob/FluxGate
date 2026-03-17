@@ -3,6 +3,8 @@ package com.bryan.fluxgate.model.dto;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import com.bryan.fluxgate.model.enums.AccountStatus;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -14,7 +16,7 @@ public class AccountDTO {
 
     private String name;
 
-    private String status;
+    private AccountStatus status;
 
     private OffsetDateTime createdAt;
 

@@ -3,8 +3,12 @@ package com.bryan.fluxgate.entity;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import com.bryan.fluxgate.model.enums.AccountStatus;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -14,7 +18,6 @@ import lombok.NoArgsConstructor;
 
 @Table(name = "accounts")
 @Entity
-@Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,7 +28,9 @@ public class Account {
 
     private String name;
 
-    private String status;
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private AccountStatus status;
 
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
