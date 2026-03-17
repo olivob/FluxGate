@@ -35,6 +35,10 @@ public class ApiKeyAuthService {
 
         validateApiKey(apiKeyResponse);
 
+        // will optimize writes later
+
+        apiKeyResponse.setLastUsedAt(OffsetDateTime.now());
+
         return new ApiKeyPrincipal(apiKeyResponse.getAccountId(), apiKeyResponse.getId());
     }
 
