@@ -35,7 +35,6 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
         }
 
         try {
-            log.info("Attempting API key authentication");
             Authentication authRequest = new ApiKeyAuthenticationToken(rawApiKey);
             Authentication authResponse = authenticationManager.authenticate(authRequest);
 
