@@ -9,7 +9,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.bryan.fluxgate.repository.ApiRequestLogRepository;
 import com.bryan.fluxgate.security.ApiKeyAuthenticationFilter;
+import com.bryan.fluxgate.security.ApiRequestLogFilter;
 
 @Configuration
 public class SecurityConfig {
@@ -25,8 +27,14 @@ public class SecurityConfig {
     }
 
     @Bean
+    public ApiRequestLogFilter getApiRequestLogFilter(ApiRequestLogRepository apiRequestLogRepository) {
+        return new ApiRequestLogFilter(apiRequestLogRepository);
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-            ApiKeyAuthenticationFilter apiKeyAuthenticationFilter) throws Exception {
+            ApiKeyAuthenticationFilter apiKeyAuthenticationFilter, ApiRequestLogFilter apiRequestLogFilter)
+            throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -36,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll())
                 .addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(apiRequestLogFilter, ApiKeyAuthenticationFilter.class)
                 .build();
     }
 }

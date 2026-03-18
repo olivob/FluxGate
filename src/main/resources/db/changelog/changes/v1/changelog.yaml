@@ -48,3 +48,13 @@ databaseChangeLog:
         - sqlFile:
             path: ddl/create_table_usage_ledger_daily.sql
             relativeToChangelogFile: true
+
+  - changeSet:
+      id: create_table_api_request_logs
+      author: Bryan Olivo
+      failOnError: true
+      runInTransaction: true
+      changes:
+        - sqlFile:
+            path: ddl/create_table_api_request_logs.sql
+            relativeToChangelogFile: true
