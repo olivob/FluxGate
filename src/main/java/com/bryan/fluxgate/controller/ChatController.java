@@ -11,17 +11,17 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bryan.fluxgate.model.dto.ChatRequest;
 import com.bryan.fluxgate.model.dto.ChatResponse;
 import com.bryan.fluxgate.model.principal.ApiKeyPrincipal;
-import com.bryan.fluxgate.service.GatwayChatServiceImpl;
+import com.bryan.fluxgate.service.GatewayChatService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-@RequestMapping("/api/v1/chat")
+@RequestMapping("/v1/chat")
 @RestController
 @RequiredArgsConstructor
 public class ChatController {
 
-    private final GatwayChatServiceImpl gatewayChatService;
+    private final GatewayChatService gatewayChatService;
 
     @PostMapping(value = "/completions", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ChatResponse> createCompletion(@Valid @RequestBody ChatRequest chatRequest,

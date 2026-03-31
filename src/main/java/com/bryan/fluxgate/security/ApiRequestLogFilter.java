@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.bryan.fluxgate.entity.ApiRequestLog;
+import com.bryan.fluxgate.model.RequestAttributeKeys;
 import com.bryan.fluxgate.model.principal.ApiKeyPrincipal;
 import com.bryan.fluxgate.repository.ApiRequestLogRepository;
 
@@ -43,13 +44,18 @@ public class ApiRequestLogFilter extends OncePerRequestFilter {
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
+            String provider = (String) request.getAttribute(RequestAttributeKeys.PROVIDER);
+            String model = (String) request.getAttribute(RequestAttributeKeys.MODEL);
+            String errorCode = (String) request.getAttribute(RequestAttributeKeys.ERROR_CODE);
+
             if (authentication != null && authentication.isAuthenticated()
                     && authentication.getPrincipal() instanceof ApiKeyPrincipal principal) {
 
                 ApiRequestLog apiRequestLog = ApiRequestLog.builder().id(UUID.randomUUID())
                         .accountId(principal.accountId()).apiKeyId(principal.apiKeyId()).path(request.getRequestURI())
                         .method(request.getMethod()).statusCode(response.getStatus()).requestedAt(requestedTime)
-                        .completedAt(completedTime).latencyMs((int) latencyMs).build();
+                        .completedAt(completedTime).latencyMs((int) latencyMs).provider(provider).model(model)
+                        .errorCode(errorCode).build();
 
                 try {
                     apiLogRepository.save(apiRequestLog);

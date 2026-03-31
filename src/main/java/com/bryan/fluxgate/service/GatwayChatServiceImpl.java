@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class GatwayChatServiceImpl implements GatewayChatService {
 
-    private final ProviderRoutingServiceImpl providerRoutingService;
+    private final ProviderRoutingService providerRoutingService;
 
     @Override
     public ChatResponse createCompletion(ChatRequest request, ApiKeyPrincipal apiKeyPrincipal) {

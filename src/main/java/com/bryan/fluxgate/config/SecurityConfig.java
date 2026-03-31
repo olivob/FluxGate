@@ -40,8 +40,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers("/api/v1/verifyKey").authenticated()
-                        .requestMatchers("/api/**").authenticated()
+                        .requestMatchers("/v1/verifyKey").authenticated()
+                        .requestMatchers("/v1/**").authenticated()
                         .anyRequest().permitAll())
                 .addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(apiRequestLogFilter, ApiKeyAuthenticationFilter.class)
