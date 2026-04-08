@@ -17,7 +17,6 @@ public class ProviderRoutingServiceImpl implements ProviderRoutingService {
 
     @Override
     public ProviderClient route(ChatRequest chatRequest, ApiKeyPrincipal principal) {
-        // set attributes
         return mockProviderClient;
     }
 }

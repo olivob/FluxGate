@@ -16,10 +16,11 @@ import lombok.extern.slf4j.Slf4j;
 public class GatwayChatServiceImpl implements GatewayChatService {
 
     private final ProviderRoutingService providerRoutingService;
+    private final ApiKeyRateLimitService apiKeyRateLimitService;
 
     @Override
     public ChatResponse createCompletion(ChatRequest request, ApiKeyPrincipal apiKeyPrincipal) {
-
+        apiKeyRateLimitService.validateAgainstLimit(apiKeyPrincipal.apiKeyId());
         ProviderClient client = providerRoutingService.route(request, apiKeyPrincipal);
 
         return client.complete(request, apiKeyPrincipal);

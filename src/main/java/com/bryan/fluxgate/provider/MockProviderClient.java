@@ -25,6 +25,6 @@ public class MockProviderClient implements ProviderClient {
                 UUID.randomUUID(),
                 "mock-provider",
                 request.model(),
-                "Mock response for prompt: " + request.prompt());
+                "Mock response for prompt: " + request.prompt() + "for key: " + principal.apiKeyId());
     }
 }
