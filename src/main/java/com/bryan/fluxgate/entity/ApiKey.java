@@ -35,8 +35,7 @@ public class ApiKey {
     @Column(name = "account_id")
     private UUID accountId;
 
-    // because of LAZY, any time i am doing apiKey.getAccount() i will need to
-    // annotate with @Transactional
+    // Authentication explicitly fetches this relationship with its key lookup.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", insertable = false, updatable = false)
     private Account account;

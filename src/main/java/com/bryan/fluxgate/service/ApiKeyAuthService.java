@@ -1,9 +1,11 @@
 package com.bryan.fluxgate.service;
 
+import java.time.Clock;
 import java.time.OffsetDateTime;
 
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.bryan.fluxgate.entity.ApiKey;
 import com.bryan.fluxgate.model.enums.AccountStatus;
@@ -12,10 +14,8 @@ import com.bryan.fluxgate.model.principal.ApiKeyPrincipal;
 import com.bryan.fluxgate.repository.ApiKeyRepository;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
 public class ApiKeyAuthService {
 
@@ -23,6 +23,9 @@ public class ApiKeyAuthService {
 
     private final ApiKeyHashingService apiKeyHashingService;
 
+    private final Clock clock;
+
+    @Transactional
     public ApiKeyPrincipal verifyApiKey(String rawApiKey) {
         if (rawApiKey == null || rawApiKey.isBlank()) {
             throw new BadCredentialsException("API key must not be null or empty");
@@ -33,17 +36,17 @@ public class ApiKeyAuthService {
                 .findByKeyHashAndStatusWithAccount(hashedKey, ApiKeyStatus.ACTIVE)
                 .orElseThrow(() -> new BadCredentialsException("Invalid API key"));
 
-        validateApiKey(apiKeyResponse);
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        validateApiKey(apiKeyResponse, now);
 
-        // will optimize writes later
-
-        apiKeyResponse.setLastUsedAt(OffsetDateTime.now());
+        // Persist only authentication metadata, never a stale copy of key status.
+        apiKeyRepository.recordSuccessfulAuthentication(apiKeyResponse.getId(), now);
 
         return new ApiKeyPrincipal(apiKeyResponse.getAccountId(), apiKeyResponse.getId());
     }
 
-    private void validateApiKey(ApiKey apiKey) {
-        if (apiKey.getExpiresAt() != null && apiKey.getExpiresAt().isBefore(OffsetDateTime.now())) {
+    private void validateApiKey(ApiKey apiKey, OffsetDateTime now) {
+        if (apiKey.getExpiresAt() != null && !apiKey.getExpiresAt().isAfter(now)) {
             throw new BadCredentialsException("API key has expired");
         }
 
@@ -56,12 +59,4 @@ public class ApiKeyAuthService {
         }
     }
 
-    // private AccountDTO mapAccountToDTO(Account account) {
-    // return AccountDTO.builder()
-    // .id(account.getId())
-    // .name(account.getName())
-    // .status(account.getStatus())
-    // .createdAt(account.getCreatedAt())
-    // .build();
-    // }
 }

@@ -2,6 +2,8 @@ package com.bryan.fluxgate.service;
 
 import java.util.UUID;
 
+import com.bryan.fluxgate.model.RateLimitCheckResponse;
+
 public interface ApiKeyRateLimitService {
-    void validateAgainstLimit(UUID apiKeyId);
+    RateLimitCheckResponse validateAgainstLimit(UUID apiKeyId);
 }

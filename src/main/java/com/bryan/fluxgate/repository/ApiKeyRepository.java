@@ -2,9 +2,11 @@ package com.bryan.fluxgate.repository;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.time.OffsetDateTime;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -24,4 +26,13 @@ public interface ApiKeyRepository extends JpaRepository<ApiKey, UUID> {
             """)
     Optional<ApiKey> findByKeyHashAndStatusWithAccount(@Param("keyHash") String keyHash,
             @Param("status") ApiKeyStatus status);
+
+    // The timestamp only moves forward, even if concurrent requests finish out of order.
+    @Modifying
+    @Query("""
+                UPDATE ApiKey ak SET ak.lastUsedAt = :usedAt
+                WHERE ak.id = :id
+                  AND (ak.lastUsedAt IS NULL OR ak.lastUsedAt < :usedAt)
+            """)
+    int recordSuccessfulAuthentication(@Param("id") UUID id, @Param("usedAt") OffsetDateTime usedAt);
 }

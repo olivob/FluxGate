@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: normalize_account_and_api_key_status
+      author: Bryan Olivo
+      changes:
+        - sqlFile:
+            path: ddl/normalize_status.sql
+            relativeToChangelogFile: true
