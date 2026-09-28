@@ -54,3 +54,6 @@ that the hosted workflow has passed. Test reports are uploaded as `test-reports`
 and retained for seven days, including when tests fail.
 
 Locally, detailed results are available in `target/surefire-reports/`.
+
+OpenAI adapter tests use a local HTTP server with fake credentials and never call
+the paid API. See [OPENAI.md](OPENAI.md) for provider setup and focused test commands.

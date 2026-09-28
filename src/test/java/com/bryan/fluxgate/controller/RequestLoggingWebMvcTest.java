@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -26,6 +27,8 @@ import org.springframework.test.web.servlet.MvcResult;
 import com.bryan.fluxgate.config.SecurityConfig;
 import com.bryan.fluxgate.entity.ApiRequestLog;
 import com.bryan.fluxgate.exception.RateLimitExceededException;
+import com.bryan.fluxgate.exception.ProviderException;
+import com.bryan.fluxgate.exception.UnsupportedModelException;
 import com.bryan.fluxgate.model.dto.ChatResponse;
 import com.bryan.fluxgate.model.principal.ApiKeyPrincipal;
 import com.bryan.fluxgate.repository.ApiRequestLogRepository;
@@ -78,6 +81,29 @@ class RequestLoggingWebMvcTest {
         MvcResult result = chat(BODY).andExpect(status().isTooManyRequests())
                 .andExpect(header().string("Retry-After", "42")).andReturn();
         assertEquals("rate_limit_exceeded", capturedLog(result, 429).getErrorCode());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"TIMEOUT,504,upstream_timeout", "RATE_LIMITED,503,upstream_rate_limited",
+            "AUTHENTICATION_FAILED,502,upstream_authentication_failed", "UNAVAILABLE,503,upstream_unavailable",
+            "INVALID_RESPONSE,502,upstream_invalid_response", "NOT_CONFIGURED,503,upstream_not_configured",
+            "REJECTED_REQUEST,502,upstream_rejected_request", "INCOMPLETE_RESPONSE,502,upstream_incomplete_response",
+            "REFUSAL,422,upstream_refusal"})
+    void providerFailuresHaveDistinctHttpAndAuditCodes(ProviderException.Kind kind, int status, String code)
+            throws Exception {
+        when(gateway.createCompletion(any(), any())).thenThrow(new ProviderException(kind));
+        MvcResult result = chat(BODY).andExpect(status().is(status))
+                .andExpect(jsonPath("$.error").value(code))
+                .andExpect(header().doesNotExist("Retry-After")).andReturn();
+        assertEquals(code, capturedLog(result, status).getErrorCode());
+    }
+
+    @Test
+    void unknownModelIsAClientError() throws Exception {
+        when(gateway.createCompletion(any(), any())).thenThrow(new UnsupportedModelException());
+        MvcResult result = chat(BODY).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("unsupported_model")).andReturn();
+        assertEquals("unsupported_model", capturedLog(result, 400).getErrorCode());
     }
 
     @ParameterizedTest

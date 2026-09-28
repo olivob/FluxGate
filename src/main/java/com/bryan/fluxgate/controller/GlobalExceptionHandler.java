@@ -12,6 +12,9 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.context.request.RequestAttributes;
 
 import com.bryan.fluxgate.exception.RateLimitExceededException;
+import com.bryan.fluxgate.exception.ProviderException;
+import com.bryan.fluxgate.exception.UnsupportedModelException;
+import java.util.Locale;
 import com.bryan.fluxgate.model.response.RateLimitErrorResponse;
 import com.bryan.fluxgate.model.response.ApiErrorResponse;
 import com.bryan.fluxgate.model.RequestAttributeKeys;
@@ -23,6 +26,35 @@ import lombok.extern.slf4j.Slf4j;
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    @ExceptionHandler(UnsupportedModelException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnsupportedModel(UnsupportedModelException e,
+            HttpServletRequest request) {
+        request.setAttribute(RequestAttributeKeys.ERROR_CODE, "unsupported_model");
+        return ResponseEntity.badRequest().body(new ApiErrorResponse("unsupported_model", e.getMessage()));
+    }
+
+    @ExceptionHandler(ProviderException.class)
+    public ResponseEntity<ApiErrorResponse> handleProviderFailure(ProviderException e, HttpServletRequest request) {
+        HttpStatus status = switch (e.getKind()) {
+            case TIMEOUT -> HttpStatus.GATEWAY_TIMEOUT;
+            case NOT_CONFIGURED, UNAVAILABLE, RATE_LIMITED -> HttpStatus.SERVICE_UNAVAILABLE;
+            case REFUSAL -> HttpStatus.UNPROCESSABLE_ENTITY;
+            default -> HttpStatus.BAD_GATEWAY;
+        };
+        String code = "upstream_" + e.getKind().name().toLowerCase(Locale.ROOT);
+        String message = switch (e.getKind()) {
+            case NOT_CONFIGURED -> "The requested provider is not enabled.";
+            case TIMEOUT -> "The upstream provider did not respond within the configured timeout.";
+            case RATE_LIMITED -> "The upstream provider rejected the request due to its rate or quota limit.";
+            case REFUSAL -> "The upstream provider declined to generate a response.";
+            case INCOMPLETE_RESPONSE -> "The upstream provider returned an incomplete response.";
+            default -> "The upstream provider could not complete the request.";
+        };
+        request.setAttribute(RequestAttributeKeys.ERROR_CODE, code);
+        log.warn("Provider failure requestId={} code={}", request.getAttribute(RequestAttributeKeys.REQUEST_ID), code);
+        return ResponseEntity.status(status).body(new ApiErrorResponse(code, message));
+    }
 
     @ExceptionHandler(RateLimitExceededException.class)
     public ResponseEntity<RateLimitErrorResponse> handleRateLimitExceeded(RateLimitExceededException e,
