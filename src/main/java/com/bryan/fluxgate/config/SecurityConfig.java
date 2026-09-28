@@ -12,6 +12,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import com.bryan.fluxgate.repository.ApiRequestLogRepository;
 import com.bryan.fluxgate.security.ApiKeyAuthenticationFilter;
 import com.bryan.fluxgate.security.ApiRequestLogFilter;
+import com.bryan.fluxgate.security.ApiSecurityErrorHandler;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.servlet.DispatcherType;
 
 @Configuration
 public class SecurityConfig {
@@ -22,29 +26,33 @@ public class SecurityConfig {
     }
 
     @Bean
-    public ApiKeyAuthenticationFilter getApiKeyAuthenticationFilter(AuthenticationManager authenticationManager) {
-        return new ApiKeyAuthenticationFilter(authenticationManager);
-    }
-
-    @Bean
-    public ApiRequestLogFilter getApiRequestLogFilter(ApiRequestLogRepository apiRequestLogRepository) {
-        return new ApiRequestLogFilter(apiRequestLogRepository);
+    public ApiSecurityErrorHandler apiSecurityErrorHandler(ObjectMapper objectMapper) {
+        return new ApiSecurityErrorHandler(objectMapper);
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-            ApiKeyAuthenticationFilter apiKeyAuthenticationFilter, ApiRequestLogFilter apiRequestLogFilter)
+            AuthenticationManager authenticationManager, ApiRequestLogRepository apiRequestLogRepository,
+            ApiSecurityErrorHandler securityErrors)
             throws Exception {
+        // Register these only in the security chain, not as separate servlet filters.
+        ApiKeyAuthenticationFilter apiKeyAuthenticationFilter =
+                new ApiKeyAuthenticationFilter(authenticationManager, securityErrors);
+        ApiRequestLogFilter apiRequestLogFilter = new ApiRequestLogFilter(apiRequestLogRepository);
         return http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(errors -> errors
+                        .authenticationEntryPoint(securityErrors)
+                        .accessDeniedHandler(securityErrors))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers("/v1/verifyKey").authenticated()
+                        // Preserve the original status on servlet error dispatches.
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        .requestMatchers("/health", "/actuator/health").permitAll()
                         .requestMatchers("/v1/**").authenticated()
-                        .anyRequest().permitAll())
+                        .anyRequest().denyAll())
                 .addFilterBefore(apiKeyAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(apiRequestLogFilter, ApiKeyAuthenticationFilter.class)
+                .addFilterBefore(apiRequestLogFilter, ApiKeyAuthenticationFilter.class)
                 .build();
     }
 }

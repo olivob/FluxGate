@@ -1,7 +1,5 @@
 package com.bryan.fluxgate.provider;
 
-import java.util.UUID;
-
 import org.springframework.stereotype.Service;
 
 import com.bryan.fluxgate.model.dto.ChatRequest;
@@ -22,7 +20,7 @@ public class MockProviderClient implements ProviderClient {
         requestLogContext.setProvider("mock-provider");
         requestLogContext.setModel(request.model());
         return new ChatResponse(
-                UUID.randomUUID(),
+                requestLogContext.getRequestId(),
                 "mock-provider",
                 request.model(),
                 "Mock response for prompt: " + request.prompt() + "for key: " + principal.apiKeyId());

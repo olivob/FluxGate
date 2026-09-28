@@ -156,15 +156,10 @@ class ApiKeyAuthServiceTest extends PostgresIntegrationTest {
         // Exercise an actual v1 -> current upgrade separately from the fresh-schema tests.
         String schema = "upgrade_" + UUID.randomUUID().toString().replace("-", "");
         jdbc.execute("create schema " + schema);
+        migrate(schema, "db/changelog/changes/v1/changelog.yaml");
+
         try (Connection connection = dataSource.getConnection()) {
             connection.setSchema(schema);
-            PostgresDatabase database = new PostgresDatabase();
-            database.setConnection(new JdbcConnection(connection));
-            database.setDefaultSchemaName(schema);
-            database.setLiquibaseSchemaName(schema);
-            var resources = new ClassLoaderResourceAccessor();
-            new Liquibase("db/changelog/changes/v1/changelog.yaml", resources, database)
-                    .update(new Contexts(), new LabelExpression());
 
             try (var statement = connection.createStatement()) {
                 statement.executeUpdate("insert into accounts (name, status) values ('old-active', 'active'), ('old-revoked', 'revoked')");
@@ -174,8 +169,7 @@ class ApiKeyAuthServiceTest extends PostgresIntegrationTest {
                         """);
             }
 
-            new Liquibase("db/changelog/changelog-master.yaml", resources, database)
-                    .update(new Contexts(), new LabelExpression());
+            migrate(schema, "db/changelog/changelog-master.yaml");
 
             try (var statement = connection.createStatement();
                     var rows = statement.executeQuery("""
@@ -188,6 +182,21 @@ class ApiKeyAuthServiceTest extends PostgresIntegrationTest {
                 org.junit.jupiter.api.Assertions.assertTrue(rows.next());
                 assertEquals("REVOKED", rows.getString(2));
                 assertEquals("REVOKED", rows.getString(3));
+            }
+        }
+    }
+
+    private void migrate(String schema, String changelog) throws Exception {
+        // Liquibase closes its database connection, so each migration owns one.
+        try (Connection connection = dataSource.getConnection();
+                var resources = new ClassLoaderResourceAccessor()) {
+            connection.setSchema(schema);
+            PostgresDatabase database = new PostgresDatabase();
+            database.setConnection(new JdbcConnection(connection));
+            database.setDefaultSchemaName(schema);
+            database.setLiquibaseSchemaName(schema);
+            try (Liquibase liquibase = new Liquibase(changelog, resources, database)) {
+                liquibase.update(new Contexts(), new LabelExpression());
             }
         }
     }

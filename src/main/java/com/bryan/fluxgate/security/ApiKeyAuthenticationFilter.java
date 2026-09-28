@@ -7,6 +7,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
@@ -22,6 +23,13 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
     private final static String API_KEY_HEADER = "X-API-Key";
 
     private final AuthenticationManager authenticationManager;
+    private final AuthenticationEntryPoint authenticationEntryPoint;
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI().substring(request.getContextPath().length());
+        return path.equals("/health") || path.equals("/actuator/health");
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -42,11 +50,7 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
         } catch (BadCredentialsException e) {
             SecurityContextHolder.clearContext();
             log.warn("API key authentication failed: {}", e.getMessage());
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("""
-                        {"error":"unauthorized","message":"Invalid API key"}
-                    """);
+            authenticationEntryPoint.commence(request, response, e);
             return;
         }
 
